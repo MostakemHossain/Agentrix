@@ -16,32 +16,33 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
-const formSchema = z.object({
-  name: z.string().min(1, "Name is Required"),
-  email: z.string().email(),
-  password: z.string().min(1, "Password is Required"),
-  confirmPassword: z.string().min(1, "Password is Required"),
-}).refine((data)=>data.password === data.confirmPassword, {
+const formSchema = z
+  .object({
+    name: z.string().min(1, "Name is Required"),
+    email: z.string().email(),
+    password: z.string().min(1, "Password is Required"),
+    confirmPassword: z.string().min(1, "Password is Required"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
-});
+  });
 
 export const SignUpView = () => {
-  const router = useRouter();
+
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-        name:"",
+      name: "",
       email: "",
       password: "",
-      confirmPassword:""
+      confirmPassword: "",
     },
   });
 
@@ -53,12 +54,33 @@ export const SignUpView = () => {
         name: data.name,
         email: data.email,
         password: data.password,
-
+        callbackURL:"/",
       },
       {
         onSuccess: () => {
           setPending(false);
-          router.push("/");
+       
+        },
+        onError: ({ error }) => {
+          setPending(false);
+          setError(error.message);
+        },
+      }
+    );
+  };
+
+  const onSocial = (provider: "github" | "google") => {
+    setError(null);
+    setPending(true);
+    authClient.signIn.social(
+      {
+        provider: provider,
+        callbackURL:"/",
+      },
+      {
+        onSuccess: () => {
+          setPending(false);
+       
         },
         onError: ({ error }) => {
           setPending(false);
@@ -175,6 +197,7 @@ export const SignUpView = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <Button
+                    onClick={() => onSocial("google")}
                     disabled={pending}
                     variant={"outline"}
                     type="button"
@@ -183,6 +206,7 @@ export const SignUpView = () => {
                     Google
                   </Button>
                   <Button
+                    onClick={() => onSocial("github")}
                     disabled={pending}
                     variant={"outline"}
                     type="button"
