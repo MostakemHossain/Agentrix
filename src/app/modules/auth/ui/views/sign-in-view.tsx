@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { authClient } from "@/lib/auth-client";
 
@@ -27,9 +26,8 @@ const formSchema = z.object({
 
 export const SingInView = () => {
 
-    const router= useRouter();
-    const [error,setError]= useState<string | null>(null);
-    const [pending,setPending]= useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState<boolean>(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -39,31 +37,47 @@ export const SingInView = () => {
     },
   });
 
-
-  const onSubmit=  (data:z.infer<typeof formSchema>)=>{
+  const onSubmit = (data: z.infer<typeof formSchema>) => {
     setError(null);
     setPending(true);
-     authClient.signIn.email(
-        {
-            email:data.email,
-            password:data.password
+    authClient.signIn.email(
+      {
+        email: data.email,
+        password: data.password,
+      },
+      {
+        onSuccess: () => {
+          setPending(false);
+        
         },
-        {
-            onSuccess:()=>{
-                setPending(false);
-                router.push(
-                    "/"
-                )
-            },
-            onError:({error})=>{
-                setPending(false);
-                setError(error.message);
+        onError: ({ error }) => {
+          setPending(false);
+          setError(error.message);
+        },
+      }
+    );
+  };
 
-            }
-        }
-    )
-
-  }
+  const onSocial = (provider: "github" | "google") => {
+    setError(null);
+    setPending(true);
+    authClient.signIn.social(
+      {
+        provider: provider,
+        callbackURL:"/",
+      },
+      {
+        onSuccess: () => {
+          setPending(false);
+         
+        },
+        onError: ({ error }) => {
+          setPending(false);
+          setError(error.message);
+        },
+      }
+    );
+  };
 
   return (
     <div className="flex flex-col gap-6">
@@ -131,10 +145,22 @@ export const SingInView = () => {
                   </span>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <Button disabled={pending} variant={"outline"} type="button" className="w-full">
+                  <Button
+                 onClick={() => onSocial("google")}
+                    disabled={pending}
+                    variant={"outline"}
+                    type="button"
+                    className="w-full"
+                  >
                     Google
                   </Button>
-                  <Button disabled={pending} variant={"outline"} type="button" className="w-full">
+                  <Button
+                  onClick={() => onSocial("github")}
+                    disabled={pending}
+                    variant={"outline"}
+                    type="button"
+                    className="w-full"
+                  >
                     Github
                   </Button>
                 </div>
